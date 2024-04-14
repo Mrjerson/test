@@ -59,13 +59,17 @@ app.post('/insert', upload.fields([{ name: 'logo' }, { name: 'image1' }]), async
   }
 });
 
-app.get('/', (req, res)=> {
-  const sql = "SELECT * FROM images"
-  pool.query(sql, (err, data)=> {
-      if (err) return res.json(err);
-      return res.json(data);
-  })
-})
+app.get('/', async (req, res)=> {
+  try {
+    const sql = "SELECT * FROM images";
+    const [rows, fields] = await pool.execute(sql);
+    res.json(rows);
+  } catch (error) {
+    console.error('Error retrieving data:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
