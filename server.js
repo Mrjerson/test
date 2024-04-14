@@ -22,75 +22,75 @@ const pool = mysql.createPool({
   queueLimit: 0
 });
 
-  const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-      cb(null, 'public/common');
-    },
-    filename: (req, file, cb) => {
-      cb(null, file.fieldname + "_" + Date.now() + path.extname(file.originalname));
-    },
-  });
-  
-  const upload = multer({ storage: storage });
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'public/common');
+  },
+  filename: (req, file, cb) => {
+    cb(null, file.fieldname + "_" + Date.now() + path.extname(file.originalname));
+  },
+});
 
-  app.post('/insert', upload.fields([{ name: 'logo' }, { name: 'image1' }]), async (req, res) => {
-    const { feName, barangay, description, operatingHours, location, loc, locationDescription, ave, phone, email } = req.body;
-    const textColumns = ['feName', 'barangay', 'description', 'operatingHours', 'location', 'loc', 'locationDescription', 'ave', 'phone', 'email'];
-    const imageColumns = ['logo', 'image1'];
-  
-    try {
-      const connection = await pool.getConnection();
-   
-      const textValues = textColumns.map(column => req.body[column]);
-      const imageValues = imageColumns.map(column => req.files[column][0].filename);
-      const values = [...imageValues, ...textValues];
-  
-      const insertQuery = `INSERT INTO images (${[...imageColumns, ...textColumns].join(', ')}) VALUES (${values.map(() => '?').join(', ')})`;
-  
-      const result = await connection.query(insertQuery, values);
-  
-      connection.release();
-  
-      console.log('Data inserted successfully');
-      res.status(200).json({ message: 'Text and images uploaded successfully' });
-    } catch (error) {
-      console.error('Error uploading text and images:', error);
-      res.status(500).json({ error: 'Internal Server Error' });
-    }
-  });       
+const upload = multer({ storage: storage });
+
+app.post('/insert', upload.fields([{ name: 'logo' }, { name: 'image1' }]), async (req, res) => {
+  const { feName, barangay, description, operatingHours, location, loc, locationDescription, ave, phone, email } = req.body;
+  const textColumns = ['feName', 'barangay', 'description', 'operatingHours', 'location', 'loc', 'locationDescription', 'ave', 'phone', 'email'];
+  const imageColumns = ['logo', 'image1'];
+
+  try {
+    const connection = await pool.getConnection();
+
+    const textValues = textColumns.map(column => req.body[column]);
+    const imageValues = imageColumns.map(column => req.files[column][0].filename);
+    const values = [...imageValues, ...textValues];
+
+    const insertQuery = `INSERT INTO images (${[...imageColumns, ...textColumns].join(', ')}) VALUES (${values.map(() => '?').join(', ')})`;
+
+    const result = await connection.query(insertQuery, values);
+
+    connection.release();
+
+    console.log('Data inserted successfully');
+    res.status(200).json({ message: 'Text and images uploaded successfully' });
+  } catch (error) {
+    console.error('Error uploading text and images:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 app.get('/', (req, res)=> {
   const sql = "SELECT * FROM images"
-  connection.query(sql, (err, data)=> {
+  pool.query(sql, (err, data)=> {
       if (err) return res.json(err);
       return res.json(data);
   })
 })
-  app.post('/login', async (req, res) => {
-    const { username, password } = req.body;
-    try {
-        const connection = await pool.getConnection();
-        const [rows, fields] = await connection.execute('SELECT id, password FROM food WHERE username = ?', [username]);
-        connection.release();
 
-        if (rows.length > 0) {
-        const hashedPassword = rows[0].password;
-        const passwordMatch = await bcrypt.compare(password, hashedPassword);
-        if (passwordMatch) {
-            res.status(200).send('Login successful');
-        } else {
-            res.status(401).send('Invalid credentials');
-        }
-        } else {
-        res.status(404).send('User not found');
-        }
-    } catch (error) {
-        console.error('MySQL query error:', error);
-        res.status(500).send('Error logging in');
-    }
+app.post('/login', async (req, res) => {
+  const { username, password } = req.body;
+  try {
+      const connection = await pool.getConnection();
+      const [rows, fields] = await connection.execute('SELECT id, password FROM food WHERE username = ?', [username]);
+      connection.release();
+
+      if (rows.length > 0) {
+      const hashedPassword = rows[0].password;
+      const passwordMatch = await bcrypt.compare(password, hashedPassword);
+      if (passwordMatch) {
+          res.status(200).send('Login successful');
+      } else {
+          res.status(401).send('Invalid credentials');
+      }
+      } else {
+      res.status(404).send('User not found');
+      }
+  } catch (error) {
+      console.error('MySQL query error:', error);
+      res.status(500).send('Error logging in');
+  }
 });
-  
+
 app.listen(8081, () => {
-    console.log(`Server is running on http://localhost:8081`);
-  });
-  
+  console.log(`Server is running on http://localhost:8081`);
+});
