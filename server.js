@@ -58,7 +58,14 @@ const pool = mysql.createPool({
       res.status(500).json({ error: 'Internal Server Error' });
     }
   });       
-  
+
+app.get('/', (req, res)=> {
+  const sql = "SELECT * FROM images"
+  connection.query(sql, (err, data)=> {
+      if (err) return res.json(err);
+      return res.json(data);
+  })
+})
   app.post('/login', async (req, res) => {
     const { username, password } = req.body;
     try {
